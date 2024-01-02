@@ -9,7 +9,7 @@ openai.api_base = "https://qag02.openai.azure.com/"
 openai.api_version = "2023-07-01-preview"
 openai.api_key = "17f82d1fc6fe4d0ba2a768d8836c3e89"
 
-image_url = "https://pic.pimg.tw/mulicia/1390350684-3189396833_l.png"
+image_url = "http://127.0.0.1:8080/%E8%97%A5%E5%93%81%E6%98%8E%E7%B4%B0%E5%8F%8A%E6%94%B6%E6%93%9A.png"
 content = analyze_image(image_url)
 
 message_text = [
