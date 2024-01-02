@@ -83,6 +83,7 @@ def analyze_image(image_url):
         data = response.read().decode("utf-8")
         result_dict = json.loads(data)
         content = result_dict.get("readResult", {}).get("content", "").replace("\n", "")
+        print(content)
         conn.close()
         return content
     except Exception as e:
