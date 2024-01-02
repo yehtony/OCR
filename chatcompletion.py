@@ -2,6 +2,7 @@
 # Note: This code sample requires OpenAI Python library version 0.28.1 or lower.
 import os
 import openai
+import json
 from computervision import analyze_image
 
 openai.api_type = "azure"
@@ -9,7 +10,7 @@ openai.api_base = "https://qag02.openai.azure.com/"
 openai.api_version = "2023-07-01-preview"
 openai.api_key = "17f82d1fc6fe4d0ba2a768d8836c3e89"
 
-image_url = "http://140.115.126.98:8080/image/早午晚.png"
+image_url = "http://140.115.126.98:8080/image/%E6%97%A9%E5%8D%88%E6%99%9A.png"
 content = analyze_image(image_url)
 
 message_text = [
@@ -25,12 +26,26 @@ message_text = [
         "role": "assistant",
         "content": '{"開方日期": "107.03.30", "開方醫院": "身心診所[3531133279]"}\n{"商品名": "MOCALM", "成分名/學名": "ALPRAZOLAM", "單位劑量": "0.5毫克/顆", "每次劑量": "1顆", "每日劑量": "必要時", "給藥日份": "21天", "早上": true, "中午": false, "晚上": false, "睡前": false}\n{"商品名": "ALPRALINE", "成分名/學名": "ALPRAZOLAM", "單位劑量": "0.5毫克/顆", "每次劑量": "1顆", "每日劑量": "必要時", "給藥日份": "21天", "早上": true, "中午": false, "晚上": false, "睡前": false}\n{"商品名": "Genclone", "成分名/學名": "ZOPICLONE", "單位劑量": "7.5毫克/顆", "每次劑量": "1顆", "每日劑量": "1次", "給藥日份": "21天", "早上": true, "中午": false, "晚上": false, "睡前": false}',
     },
-    {
-        "role": "assistant",
-        "content": '{"開方日期": "102/02/15", "開方醫院": "李耳鼻喉科診所(3517072859)"}\n{"商品名": "Fynadin/Allegra", "成分名/學名": null, "單位劑量": "60毫克/顆", "每次劑量": "1顆", "每日劑量": "早晚服用", "給藥日份": "14天", "早上": true, "中午": false, "晚上": true, "睡前": false, "適應症": "抗過敏"}\n{"商品名": "Methylephedrine", "成分名/學名": null, "單位劑量": "25毫克/顆", "每次劑量": "1顆", "每日劑量": "早晚服用", "給藥日份": "7天", "早上": true, "中午": false, "晚上": true, "睡前": false, "適應症": "抗過敏"}\n{"商品名": "Nasonex", "成分名/學名": null, "單位劑量": "50微克/噴", "每次劑量": "1噴", "每日劑量": "需要時可早晚服用", "給藥日份": "1瓶", "早上": true, "中午": false, "晚上": true, "睡前": false, "適應症": "鼻過敏噴劑"}',
-    },
     {"role": "user", "content": content},
 ]
+
+completion = openai.ChatCompletion.create(
+    engine="LC-gpt35turbo",
+    messages=message_text,
+    temperature=0,
+    max_tokens=1600,
+    top_p=0,
+    frequency_penalty=0,
+    presence_penalty=0,
+    stop=None,
+)
+
+content = completion["choices"][0]["message"]["content"].encode(
+    "utf-8").decode("utf-8")
+
+# 分割字符串資料並轉換為Python對象
+med_record = [json.loads(obj)
+                for obj in content.split('\n') if obj.strip()]
 
 translation_mapping = {
     "開方日期": "redate",
@@ -47,23 +62,12 @@ translation_mapping = {
     "睡前": "bed",
 }
 
-# 進行映射轉換
-english_data_list = [
-    {translation_mapping[key]: value for key, value in content.items()}
-    for chinese_data in content
-]
+# 遍歷每個字典，將鍵進行轉換
+for item in med_record:
+    updated_dict = {translation_mapping[key]: value for key, value in item.items(
+    ) if key in translation_mapping}
+    item.clear()  # 清空原始字典
+    item.update(updated_dict)  # 更新字典
 
-print(english_data_list)
-
-completion = openai.ChatCompletion.create(
-    engine="LC-gpt35turbo",
-    messages=message_text,
-    temperature=0,
-    max_tokens=1600,
-    top_p=0,
-    frequency_penalty=0,
-    presence_penalty=0,
-    stop=None,
-)
-
-print(completion["choices"][0]["message"]["content"].encode("utf-8").decode("utf-8"))
+# 輸出轉換後的資料
+print(med_record)
